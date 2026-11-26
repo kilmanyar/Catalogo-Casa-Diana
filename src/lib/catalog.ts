@@ -128,6 +128,7 @@ export const STORE = {
   closeHour: catalog.closeHour,
 };
 
+const ORIGINALES: Product[] = catalog.products.map((p) => ({ ...p }));
 export const PRODUCTS: Product[] = catalog.products;
 
 // Decants are stored as independent products (`${baseId}_d5` / `${baseId}_d10`)
@@ -153,6 +154,94 @@ export const GENDERS = ["Femenino", "Masculino", "Unisex"] as const;
 
 const byId = new Map(PRODUCTS.map((p) => [p.id, p]));
 const order = new Map(PRODUCTS.map((p, i) => [p.id, i]));
+
+export type CambioPanel = {
+  id: string;
+  esNuevo: boolean;
+  oculto: boolean;
+  nombre: string | null;
+  categoria: string | null;
+  marca: string | null;
+  presentacion: string | null;
+  precio: number | null;
+  precioEfectivo: number | null;
+  stock: number | null;
+  notas: string | null;
+  genero: string | null;
+  imagen: string | null;
+};
+
+function descripcionDe(base: string, marca: string | null, presentacion: string | null) {
+  if (!marca && !presentacion) return base;
+  const m = marca ?? (base.match(/Marca:\s*([^·]+)/i)?.[1]?.trim() || "");
+  const pr = presentacion ?? (base.match(/Presentación:\s*([^·]+)/i)?.[1]?.trim() || "");
+  return [m ? `Marca: ${m}` : "", pr ? `Presentación: ${pr}` : ""].filter(Boolean).join(" · ");
+}
+
+/**
+ * Aplica los cambios hechos desde el panel (precios, fotos, ocultos y productos nuevos) sobre el catálogo base.
+ * Reemplaza el contenido de PRODUCTS/BROWSE_PRODUCTS en el lugar para que todo el código existente lo vea.
+ */
+export function aplicarCambiosPanel(cambios: CambioPanel[]) {
+  const porId = new Map(cambios.map((c) => [c.id, c]));
+  const base = new Set(ORIGINALES.map((p) => p.id));
+  const out: Product[] = [];
+  for (const p of ORIGINALES) {
+    const c = porId.get(p.id);
+    if (!c) {
+      out.push(p);
+      continue;
+    }
+    if (c.oculto) continue;
+    const price = c.precio ?? p.price;
+    out.push({
+      ...p,
+      name: c.nombre ?? p.name,
+      category: c.categoria ?? p.category,
+      price,
+      priceCash: c.precioEfectivo ?? (c.precio !== null ? Math.round(c.precio / 1.05) : p.priceCash),
+      stock: c.stock ?? p.stock,
+      image: c.imagen ?? p.image,
+      notas: c.notas ?? p.notas,
+      genero: c.genero ?? p.genero,
+      description: descripcionDe(p.description, c.marca, c.presentacion),
+    });
+  }
+  for (const c of cambios) {
+    if (!c.esNuevo || c.oculto || base.has(c.id) || !c.nombre || !c.categoria || !c.precio) continue;
+    out.push({
+      id: c.id,
+      name: c.nombre,
+      category: c.categoria,
+      price: c.precio,
+      priceCash: c.precioEfectivo ?? Math.round(c.precio / 1.05),
+      description: descripcionDe("", c.marca, c.presentacion),
+      stock: c.stock,
+      image: c.imagen,
+      image2: null,
+      genero: c.genero,
+      familia: null,
+      notas: c.notas,
+      temporada: null,
+      momento: null,
+      duracion: null,
+      proyeccion: null,
+      perfumeType: null,
+      propiedades: null,
+      uso: null,
+      tipoPiel: null,
+      englishName: null,
+    });
+  }
+  PRODUCTS.splice(0, PRODUCTS.length, ...out);
+  BROWSE_PRODUCTS.splice(0, BROWSE_PRODUCTS.length, ...out.filter((p) => !p.id.endsWith("_d10")));
+  byId.clear();
+  order.clear();
+  out.forEach((p, i) => {
+    byId.set(p.id, p);
+    order.set(p.id, i);
+  });
+}
 
 export function productById(id: string) {
   return byId.get(id);

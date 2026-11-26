@@ -1,3 +1,4 @@
+import { Resenas } from "@/components/store/resenas";
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Check, Heart, Minus, Plus, Share2, ShoppingBag, X } from "lucide-react";
@@ -31,6 +32,7 @@ export function ProductDetail({
   onToggleFavorite,
   onOpen,
   onContact,
+  onOpenAccount,
 }: {
   product: Product;
   favorite: boolean;
@@ -41,6 +43,7 @@ export function ProductDetail({
   onToggleFavorite: () => void;
   onOpen: (id: string) => void;
   onContact: () => void;
+  onOpenAccount?: () => void;
 }) {
   const [qty, setQty] = useState(1);
   const [copied, setCopied] = useState(false);
@@ -204,6 +207,7 @@ export function ProductDetail({
               Consultar este producto por WhatsApp
             </a>
           </div>
+          <Resenas productId={product.id} onOpenAccount={onOpenAccount ?? (() => {})} />
           {related.length > 0 ? (
             <div className="px-4 pb-10">
               <h3 className="font-display text-xl text-navy">También te puede gustar</h3>

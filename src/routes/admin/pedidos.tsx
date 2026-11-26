@@ -12,6 +12,9 @@ import {
 } from "@/lib/admin/pedidos";
 import { BROWSE_PRODUCTS, money } from "@/lib/catalog";
 import { btnOrange, btnPrimary, fieldClass, selectClass } from "@/components/store/ui";
+import { abrirFactura } from "@/lib/admin/factura-print";
+import { emitirFactura, getFacturaDePedido } from "@/lib/admin/facturacion";
+import { listLocales } from "@/lib/admin/locales";
 import { ETAPA_LABEL, mensajeEtapa, waLink } from "@/lib/etapas";
 import { exportToExcel } from "@/lib/admin/xlsx-export";
 
@@ -211,6 +214,7 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
     ruc: string;
     factura: string;
     nota: string;
+    local: number;
   }>(null);
   if (p && !f) {
     setF({
@@ -225,6 +229,7 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
       ruc: p.ruc_ci ?? "",
       factura: p.factura_nro ?? "",
       nota: p.nota ?? "",
+      local: p.local_id ?? 1,
     });
   }
 
@@ -244,11 +249,21 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
           rucCi: f!.ruc || null,
           facturaNro: f!.factura || null,
           nota: f!.nota || null,
+          localId: f!.local,
         },
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin"] });
     },
+  });
+
+  const { data: locales } = useQuery({ queryKey: ["admin", "locales"], queryFn: () => listLocales() });
+  const { data: fac } = useQuery({ queryKey: ["admin", "factura", id], queryFn: () => getFacturaDePedido({ data: { pedidoId: id } }) });
+  const [facErr, setFacErr] = useState<string | null>(null);
+  const emitir = useMutation({
+    mutationFn: () => emitirFactura({ data: { pedidoId: id } }),
+    onSuccess: () => { setFacErr(null); qc.invalidateQueries({ queryKey: ["admin"] }); },
+    onError: (e) => setFacErr(e instanceof Error ? e.message : "No se pudo emitir la factura."),
   });
 
   const etapaM = useMutation({
@@ -366,6 +381,14 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
               <span className={label}>RUC / CI</span>
               <input className={fieldClass} value={f.ruc} onChange={(e) => set("ruc", e.target.value)} />
             </label>
+            {locales && locales.filter((l) => l.activo).length > 1 ? (
+              <label className="flex flex-col gap-1">
+                <span className={label}>Local que despacha</span>
+                <select className={selectClass} value={f.local} disabled={p.stock_descontado} onChange={(e) => set("local", Number(e.target.value))}>
+                  {locales.filter((l) => l.activo || l.id === f.local).map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+                </select>
+              </label>
+            ) : null}
             <label className="flex flex-col gap-1">
               <span className={label}>N° de factura</span>
               <input className={fieldClass} value={f.factura} onChange={(e) => set("factura", e.target.value)} />
@@ -374,6 +397,20 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
               <span className={label}>Nota</span>
               <input className={fieldClass} value={f.nota} onChange={(e) => set("nota", e.target.value)} />
             </label>
+
+            <div className="flex flex-col gap-1 rounded-md bg-bg p-2">
+              {fac?.factura ? (
+                <button type="button" className={btnPrimary} onClick={() => abrirFactura(fac.factura!, fac.config)}>
+                  Ver / imprimir factura {fac.factura.numero}{fac.factura.estado === "anulada" ? " (anulada)" : ""}
+                </button>
+              ) : (
+                <button type="button" className={btnPrimary} disabled={emitir.isPending} onClick={() => emitir.mutate()}>
+                  Emitir factura
+                </button>
+              )}
+              <p className="text-xs text-muted">Se factura con el RUC/CI y el nombre guardados en el pedido (guardá los cambios antes de emitir).</p>
+              {facErr ? <p role="alert" className="text-xs font-medium text-coral">{facErr}</p> : null}
+            </div>
 
             <div className="flex gap-2">
               <button type="button" className={btnOrange + " flex-1"} disabled={guardar.isPending} onClick={() => guardar.mutate()}>

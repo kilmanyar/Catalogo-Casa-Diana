@@ -12,6 +12,7 @@ import {
   brandsIn,
   cashUnit,
   categoryLabel,
+  aplicarCambiosPanel,
   conOferta,
   consultText,
   filterProducts,
@@ -28,11 +29,13 @@ import {
 } from "@/lib/catalog";
 import { listOfertasPublicas } from "@/lib/admin/ofertas";
 import { listDisponibilidad } from "@/lib/admin/stock";
+import { listProductosPanel } from "@/lib/admin/productos";
 import { useCart } from "@/lib/cart-store";
 import { ProductCard } from "@/components/store/product-card";
 import { ProductDetail } from "@/components/store/product-detail";
 import { CartDrawer } from "@/components/store/cart-drawer";
 import { FavoritesDrawer } from "@/components/store/favorites-drawer";
+import { InstalarApp } from "@/components/store/instalar-app";
 import { CuentaDialog } from "@/components/store/cuenta-dialog";
 import { ContactDialog } from "@/components/store/contact-dialog";
 import { SocialLinks } from "@/components/store/social-links";
@@ -98,6 +101,18 @@ export function StorePage() {
       .then((rows) => setOfertas(Object.fromEntries(rows.map((r) => [r.productId, r]))))
       .catch(() => {});
   }, []);
+  const [panelVer, setPanelVer] = useState(0);
+  useEffect(() => {
+    // Cambios del panel sobre el catálogo base. Si falla o está vacío, la tienda usa el catálogo original.
+    listProductosPanel()
+      .then((rows) => {
+        if (rows.length > 0) {
+          aplicarCambiosPanel(rows);
+          setPanelVer((v) => v + 1);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [disp, setDisp] = useState<Record<string, number>>({});
   useEffect(() => {
     // Stock real (stock − reservas de pedidos abiertos) de los productos con stock controlado en el panel.
@@ -110,7 +125,9 @@ export function StorePage() {
       const o = conOferta(p, ofertas);
       return p.id in disp ? { ...o, stock: disp[p.id] } : o;
     },
-    [ofertas, disp],
+    // panelVer: se recalcula cuando llegan los cambios del panel (precios, productos nuevos, fotos).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ofertas, disp, panelVer],
   );
 
   useEffect(() => {
@@ -134,7 +151,8 @@ export function StorePage() {
         onlyIds: null,
         sort: "suggested",
       }),
-    [category, query, perfumeType, gender],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [category, query, perfumeType, gender, panelVer],
   );
   const brands = useMemo(() => brandsIn(brandPool), [brandPool]);
   const safeBrand = brands.includes(brand) ? brand : "all";
@@ -161,13 +179,13 @@ export function StorePage() {
 
   useEffect(() => {
     setVisible(24);
-  }, [category, query, safeBrand, perfumeType, gender, sort, minPrice, maxPrice, soloOfertas]);
+  }, [category, query, safeBrand, perfumeType, gender, sort, minPrice, maxPrice, soloOfertas, adj]);
 
   const suggestions = useMemo(() => {
     const q = query.trim();
     if (q.length < 2) return [];
     return BROWSE_PRODUCTS.filter((p) => matchesQuery(p, q)).slice(0, 6);
-  }, [query]);
+  }, [query, panelVer]);
 
   const detailBase = search.p ? productById(search.p) : undefined;
   const detail = detailBase ? adj(detailBase) : undefined;
@@ -449,6 +467,7 @@ export function StorePage() {
         <button type="button" className="faq-link" onClick={() => openContact()}>Contacto</button>
         <button type="button" className="faq-link" onClick={openFaq}>Preguntas frecuentes</button>
         <a className="faq-link" href="/seguimiento">Seguir mi pedido</a>
+        <InstalarApp />
       </footer>
 
       {cartCount > 0 && !cartOpen ? (
@@ -474,6 +493,7 @@ export function StorePage() {
             void navigate({ search: (prev) => ({ ...prev, p: undefined }), resetScroll: false });
           }}
           onAdd={(qty) => handleAdd(detail.id, qty)}
+          onOpenAccount={() => setCuentaOpen(true)}
           onToggleFavorite={() => toggleFavorite(detail.id)}
           onOpen={openProduct}
           onContact={() => openContact(consultText(detail))}

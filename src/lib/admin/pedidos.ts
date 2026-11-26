@@ -112,6 +112,7 @@ export type PedidoRow = {
   cupon: string | null;
   descuento: string;
   etapa: string;
+  local_id: number;
   created_at: string;
   updated_at: string;
 };
@@ -209,6 +210,9 @@ export const actualizarEstadoPedido = createServerFn({ method: "POST" })
       for (const item of items) {
         await ensureStockRow(item.product_id);
         await sql`update stock set qty = qty - ${item.qty}, updated_at = now() where product_id = ${item.product_id}`;
+        if (pedido.local_id !== 1) {
+          await sql`update stock_locales set qty = greatest(0, qty - ${item.qty}) where product_id = ${item.product_id} and local_id = ${pedido.local_id}`;
+        }
         // Fija el costo unitario con la última compra registrada de ese producto
         // (costeo simple, no promedio ponderado) para poder calcular margen real.
         const ultimaCompra = await sql<{ costo_unitario: string }>`
@@ -227,6 +231,12 @@ export const actualizarEstadoPedido = createServerFn({ method: "POST" })
       for (const item of items) {
         await ensureStockRow(item.product_id);
         await sql`update stock set qty = qty + ${item.qty}, updated_at = now() where product_id = ${item.product_id}`;
+        if (pedido.local_id !== 1) {
+          await sql`
+            insert into stock_locales (product_id, local_id, qty) values (${item.product_id}, ${pedido.local_id}, ${item.qty})
+            on conflict (product_id, local_id) do update set qty = stock_locales.qty + excluded.qty
+          `;
+        }
       }
       await sql`update pedidos set stock_descontado = false where id = ${data.id}`;
     }
@@ -249,6 +259,7 @@ const logisticaInput = z.object({
   rucCi: z.string().trim().max(40).nullable(),
   facturaNro: z.string().trim().max(40).nullable(),
   nota: z.string().trim().max(2000).nullable(),
+  localId: z.number().int().positive().optional(),
 });
 
 export const actualizarLogistica = createServerFn({ method: "POST" })
@@ -269,6 +280,7 @@ export const actualizarLogistica = createServerFn({ method: "POST" })
         ruc_ci = ${data.rucCi || null},
         factura_nro = ${data.facturaNro || null},
         nota = ${data.nota || null},
+        local_id = case when stock_descontado then local_id else coalesce(${data.localId ?? null}, local_id) end,
         updated_at = now()
       where id = ${data.id}
     `;

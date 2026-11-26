@@ -26,3 +26,11 @@ Entrar a `/login`, "Primera vez — crear cuenta" con `kilmanyar@gmail.com` (due
 
 ## Estado del despliegue
 Esta rama (`app-completa`) tiene el despliegue automático desactivado en `vercel.json`. Para publicarla: configurar Vercel (base de datos y variables), traer estos cambios a `main` y quitar el bloque `git` de `vercel.json`.
+
+## Funciones agregadas (segunda tanda)
+- Instalar la app (botón en el pie de la tienda; en iPhone muestra los pasos).
+- Contenido para redes: imagen PNG (publicación o historia) + texto por producto (`/admin/contenido`).
+- Reseñas de clientes con moderación (`/admin/resenas`); solo opinan quienes recibieron el producto.
+- Productos: editar precios, fotos, stock y textos, ocultar y agregar productos nuevos (`/admin/productos`). Las fotos se guardan en la base de datos.
+- Locales/depósitos: stock por local, transferencias y pedido despachado desde un local (`/admin/locales`).
+- Facturación: facturas numeradas con timbrado, IVA 10% incluido, anulación y libro de IVA ventas (`/admin/facturacion`). No es SIFEN.

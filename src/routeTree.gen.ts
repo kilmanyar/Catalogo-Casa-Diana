@@ -17,15 +17,21 @@ import { Route as SeguimientoRouteImport } from './routes/seguimiento'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminClientesRouteImport } from './routes/admin/clientes'
 import { Route as AdminComprasRouteImport } from './routes/admin/compras'
+import { Route as AdminContenidoRouteImport } from './routes/admin/contenido'
 import { Route as AdminCuponesRouteImport } from './routes/admin/cupones'
 import { Route as AdminEntregasRouteImport } from './routes/admin/entregas'
+import { Route as AdminFacturacionRouteImport } from './routes/admin/facturacion'
 import { Route as AdminGastosRouteImport } from './routes/admin/gastos'
+import { Route as AdminLocalesRouteImport } from './routes/admin/locales'
 import { Route as AdminOfertasRouteImport } from './routes/admin/ofertas'
 import { Route as AdminPedidosRouteImport } from './routes/admin/pedidos'
+import { Route as AdminProductosRouteImport } from './routes/admin/productos'
 import { Route as AdminReportesRouteImport } from './routes/admin/reportes'
+import { Route as AdminResenasRouteImport } from './routes/admin/resenas'
 import { Route as AdminStockRouteImport } from './routes/admin/stock'
 import { Route as AdminUsuariosRouteImport } from './routes/admin/usuarios'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiImgIdRouteImport } from './routes/api/img.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -67,6 +73,11 @@ const AdminComprasRoute = AdminComprasRouteImport.update({
   path: '/compras',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminContenidoRoute = AdminContenidoRouteImport.update({
+  id: '/contenido',
+  path: '/contenido',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminCuponesRoute = AdminCuponesRouteImport.update({
   id: '/cupones',
   path: '/cupones',
@@ -77,9 +88,19 @@ const AdminEntregasRoute = AdminEntregasRouteImport.update({
   path: '/entregas',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminFacturacionRoute = AdminFacturacionRouteImport.update({
+  id: '/facturacion',
+  path: '/facturacion',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminGastosRoute = AdminGastosRouteImport.update({
   id: '/gastos',
   path: '/gastos',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLocalesRoute = AdminLocalesRouteImport.update({
+  id: '/locales',
+  path: '/locales',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminOfertasRoute = AdminOfertasRouteImport.update({
@@ -92,9 +113,19 @@ const AdminPedidosRoute = AdminPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminProductosRoute = AdminProductosRouteImport.update({
+  id: '/productos',
+  path: '/productos',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminReportesRoute = AdminReportesRouteImport.update({
   id: '/reportes',
   path: '/reportes',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminResenasRoute = AdminResenasRouteImport.update({
+  id: '/resenas',
+  path: '/resenas',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminStockRoute = AdminStockRouteImport.update({
@@ -112,6 +143,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiImgIdRoute = ApiImgIdRouteImport.update({
+  id: '/api/img/$id',
+  path: '/api/img/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -121,16 +157,22 @@ export interface FileRoutesByFullPath {
   '/seguimiento': typeof SeguimientoRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/compras': typeof AdminComprasRoute
+  '/admin/contenido': typeof AdminContenidoRoute
   '/admin/cupones': typeof AdminCuponesRoute
   '/admin/entregas': typeof AdminEntregasRoute
+  '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/gastos': typeof AdminGastosRoute
+  '/admin/locales': typeof AdminLocalesRoute
   '/admin/ofertas': typeof AdminOfertasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/admin/productos': typeof AdminProductosRoute
   '/admin/reportes': typeof AdminReportesRoute
+  '/admin/resenas': typeof AdminResenasRoute
   '/admin/stock': typeof AdminStockRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/img/$id': typeof ApiImgIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,16 +181,22 @@ export interface FileRoutesByTo {
   '/seguimiento': typeof SeguimientoRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/compras': typeof AdminComprasRoute
+  '/admin/contenido': typeof AdminContenidoRoute
   '/admin/cupones': typeof AdminCuponesRoute
   '/admin/entregas': typeof AdminEntregasRoute
+  '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/gastos': typeof AdminGastosRoute
+  '/admin/locales': typeof AdminLocalesRoute
   '/admin/ofertas': typeof AdminOfertasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/admin/productos': typeof AdminProductosRoute
   '/admin/reportes': typeof AdminReportesRoute
+  '/admin/resenas': typeof AdminResenasRoute
   '/admin/stock': typeof AdminStockRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/img/$id': typeof ApiImgIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,16 +207,22 @@ export interface FileRoutesById {
   '/seguimiento': typeof SeguimientoRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/compras': typeof AdminComprasRoute
+  '/admin/contenido': typeof AdminContenidoRoute
   '/admin/cupones': typeof AdminCuponesRoute
   '/admin/entregas': typeof AdminEntregasRoute
+  '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/gastos': typeof AdminGastosRoute
+  '/admin/locales': typeof AdminLocalesRoute
   '/admin/ofertas': typeof AdminOfertasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/admin/productos': typeof AdminProductosRoute
   '/admin/reportes': typeof AdminReportesRoute
+  '/admin/resenas': typeof AdminResenasRoute
   '/admin/stock': typeof AdminStockRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/img/$id': typeof ApiImgIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,16 +234,22 @@ export interface FileRouteTypes {
     | '/seguimiento'
     | '/admin/clientes'
     | '/admin/compras'
+    | '/admin/contenido'
     | '/admin/cupones'
     | '/admin/entregas'
+    | '/admin/facturacion'
     | '/admin/gastos'
+    | '/admin/locales'
     | '/admin/ofertas'
     | '/admin/pedidos'
+    | '/admin/productos'
     | '/admin/reportes'
+    | '/admin/resenas'
     | '/admin/stock'
     | '/admin/usuarios'
     | '/admin/'
     | '/api/auth/$'
+    | '/api/img/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -198,16 +258,22 @@ export interface FileRouteTypes {
     | '/seguimiento'
     | '/admin/clientes'
     | '/admin/compras'
+    | '/admin/contenido'
     | '/admin/cupones'
     | '/admin/entregas'
+    | '/admin/facturacion'
     | '/admin/gastos'
+    | '/admin/locales'
     | '/admin/ofertas'
     | '/admin/pedidos'
+    | '/admin/productos'
     | '/admin/reportes'
+    | '/admin/resenas'
     | '/admin/stock'
     | '/admin/usuarios'
     | '/admin'
     | '/api/auth/$'
+    | '/api/img/$id'
   id:
     | '__root__'
     | '/'
@@ -217,16 +283,22 @@ export interface FileRouteTypes {
     | '/seguimiento'
     | '/admin/clientes'
     | '/admin/compras'
+    | '/admin/contenido'
     | '/admin/cupones'
     | '/admin/entregas'
+    | '/admin/facturacion'
     | '/admin/gastos'
+    | '/admin/locales'
     | '/admin/ofertas'
     | '/admin/pedidos'
+    | '/admin/productos'
     | '/admin/reportes'
+    | '/admin/resenas'
     | '/admin/stock'
     | '/admin/usuarios'
     | '/admin/'
     | '/api/auth/$'
+    | '/api/img/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,6 +308,7 @@ export interface RootRouteChildren {
   RecuperarRoute: typeof RecuperarRoute
   SeguimientoRoute: typeof SeguimientoRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiImgIdRoute: typeof ApiImgIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -296,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminComprasRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/contenido': {
+      id: '/admin/contenido'
+      path: '/contenido'
+      fullPath: '/admin/contenido'
+      preLoaderRoute: typeof AdminContenidoRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/cupones': {
       id: '/admin/cupones'
       path: '/cupones'
@@ -310,11 +390,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEntregasRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/facturacion': {
+      id: '/admin/facturacion'
+      path: '/facturacion'
+      fullPath: '/admin/facturacion'
+      preLoaderRoute: typeof AdminFacturacionRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/gastos': {
       id: '/admin/gastos'
       path: '/gastos'
       fullPath: '/admin/gastos'
       preLoaderRoute: typeof AdminGastosRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/locales': {
+      id: '/admin/locales'
+      path: '/locales'
+      fullPath: '/admin/locales'
+      preLoaderRoute: typeof AdminLocalesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/ofertas': {
@@ -331,11 +425,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPedidosRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/productos': {
+      id: '/admin/productos'
+      path: '/productos'
+      fullPath: '/admin/productos'
+      preLoaderRoute: typeof AdminProductosRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/reportes': {
       id: '/admin/reportes'
       path: '/reportes'
       fullPath: '/admin/reportes'
       preLoaderRoute: typeof AdminReportesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/resenas': {
+      id: '/admin/resenas'
+      path: '/resenas'
+      fullPath: '/admin/resenas'
+      preLoaderRoute: typeof AdminResenasRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/stock': {
@@ -359,18 +467,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/img/$id': {
+      id: '/api/img/$id'
+      path: '/api/img/$id'
+      fullPath: '/api/img/$id'
+      preLoaderRoute: typeof ApiImgIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteRouteChildren {
   AdminClientesRoute: typeof AdminClientesRoute
   AdminComprasRoute: typeof AdminComprasRoute
+  AdminContenidoRoute: typeof AdminContenidoRoute
   AdminCuponesRoute: typeof AdminCuponesRoute
   AdminEntregasRoute: typeof AdminEntregasRoute
+  AdminFacturacionRoute: typeof AdminFacturacionRoute
   AdminGastosRoute: typeof AdminGastosRoute
+  AdminLocalesRoute: typeof AdminLocalesRoute
   AdminOfertasRoute: typeof AdminOfertasRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
+  AdminProductosRoute: typeof AdminProductosRoute
   AdminReportesRoute: typeof AdminReportesRoute
+  AdminResenasRoute: typeof AdminResenasRoute
   AdminStockRoute: typeof AdminStockRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -379,12 +499,17 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminClientesRoute: AdminClientesRoute,
   AdminComprasRoute: AdminComprasRoute,
+  AdminContenidoRoute: AdminContenidoRoute,
   AdminCuponesRoute: AdminCuponesRoute,
   AdminEntregasRoute: AdminEntregasRoute,
+  AdminFacturacionRoute: AdminFacturacionRoute,
   AdminGastosRoute: AdminGastosRoute,
+  AdminLocalesRoute: AdminLocalesRoute,
   AdminOfertasRoute: AdminOfertasRoute,
   AdminPedidosRoute: AdminPedidosRoute,
+  AdminProductosRoute: AdminProductosRoute,
   AdminReportesRoute: AdminReportesRoute,
+  AdminResenasRoute: AdminResenasRoute,
   AdminStockRoute: AdminStockRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -401,6 +526,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarRoute: RecuperarRoute,
   SeguimientoRoute: SeguimientoRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiImgIdRoute: ApiImgIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

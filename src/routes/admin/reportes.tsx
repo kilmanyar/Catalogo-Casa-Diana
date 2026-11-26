@@ -55,6 +55,12 @@ function AdminReportes() {
                 <tbody>{data.topProductos.map((p) => (<tr key={p.product_name}><td className={td}>{p.product_name}</td><td className={td}>{p.unidades}</td><td className={td}>₲ {money(p.ventas)}</td></tr>))}</tbody></table>
             )}
           </Panel>
+          {data.porLocal.length > 1 ? (
+            <Panel titulo="Ventas por local">
+              <table className="w-full"><thead><tr><th className={th}>Local</th><th className={th}>Pedidos</th><th className={th}>Ventas</th></tr></thead>
+                <tbody>{data.porLocal.map((l) => (<tr key={l.local}><td className={td}>{l.local}</td><td className={td}>{l.pedidos}</td><td className={td}>₲ {money(l.ventas)}</td></tr>))}</tbody></table>
+            </Panel>
+          ) : null}
           <Panel titulo="Margen por categoría" nota="Margen = ventas − costo de la última compra registrada.">
             {data.porCategoria.length === 0 ? <p className="text-sm text-muted">Sin datos todavía.</p> : (
               <table className="w-full"><thead><tr><th className={th}>Categoría</th><th className={th}>Unid.</th><th className={th}>Ventas</th><th className={th}>Costo</th><th className={th}>Margen</th></tr></thead>

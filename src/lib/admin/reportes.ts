@@ -10,6 +10,7 @@ export type Reportes = {
   topProductos: { product_name: string; unidades: number; ventas: number }[];
   porCategoria: { categoria: string; unidades: number; ventas: number; costo: number; margen: number }[];
   clientesInactivos: { cliente: string; telefono: string; ultimo: string; dias: number; total: number }[];
+  porLocal: { local: string; pedidos: number; ventas: number }[];
   reposicion: { product_id: string; nombre: string; qty: number; minimo: number; vendidos30: number; sugerido: number }[];
 };
 
@@ -65,7 +66,13 @@ export const getReportes = createServerFn({ method: "GET" })
       select product_id, qty, stock_minimo from stock where stock_minimo > 0 and qty <= stock_minimo
     `;
 
+    const loc = await sql<{ local: string; pedidos: string; ventas: string }>`
+      select l.nombre as local, count(p.id) as pedidos, coalesce(sum(p.total), 0) as ventas
+      from pedidos p join locales l on l.id = p.local_id where p.estado = 'entregado' group by l.nombre order by ventas desc
+    `;
+
     return {
+      porLocal: loc.map((r) => ({ local: r.local, pedidos: Number(r.pedidos), ventas: Number(r.ventas) })),
       topProductos: [...top.values()].sort((a, b) => b.unidades - a.unidades).slice(0, 15),
       porCategoria: [...cat.entries()]
         .map(([categoria, v]) => ({ categoria, ...v, margen: v.ventas - v.costo }))
