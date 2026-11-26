@@ -27,6 +27,7 @@ import {
   type SortKey,
 } from "@/lib/catalog";
 import { listOfertasPublicas } from "@/lib/admin/ofertas";
+import { listDisponibilidad } from "@/lib/admin/stock";
 import { useCart } from "@/lib/cart-store";
 import { ProductCard } from "@/components/store/product-card";
 import { ProductDetail } from "@/components/store/product-detail";
@@ -97,7 +98,20 @@ export function StorePage() {
       .then((rows) => setOfertas(Object.fromEntries(rows.map((r) => [r.productId, r]))))
       .catch(() => {});
   }, []);
-  const adj = useMemo(() => (p: Product) => conOferta(p, ofertas), [ofertas]);
+  const [disp, setDisp] = useState<Record<string, number>>({});
+  useEffect(() => {
+    // Stock real (stock − reservas de pedidos abiertos) de los productos con stock controlado en el panel.
+    listDisponibilidad()
+      .then((rows) => setDisp(Object.fromEntries(rows.map((r) => [r.productId, r.disponible]))))
+      .catch(() => {});
+  }, []);
+  const adj = useMemo(
+    () => (p: Product) => {
+      const o = conOferta(p, ofertas);
+      return p.id in disp ? { ...o, stock: disp[p.id] } : o;
+    },
+    [ofertas, disp],
+  );
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -434,6 +448,7 @@ export function StorePage() {
         <SocialLinks />
         <button type="button" className="faq-link" onClick={() => openContact()}>Contacto</button>
         <button type="button" className="faq-link" onClick={openFaq}>Preguntas frecuentes</button>
+        <a className="faq-link" href="/seguimiento">Seguir mi pedido</a>
       </footer>
 
       {cartCount > 0 && !cartOpen ? (
@@ -494,7 +509,7 @@ export function StorePage() {
           for (const it of items) {
             const base = productById(it.productId);
             if (!base) continue;
-            const cap = maxQty(base);
+            const cap = maxQty(adj(base));
             const have = linesMap[it.productId] ?? 0;
             const qty = Math.min(it.qty, cap - have);
             if (qty > 0) {

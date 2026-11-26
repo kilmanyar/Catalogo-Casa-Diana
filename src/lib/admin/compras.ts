@@ -57,6 +57,6 @@ export const registrarCompra = createServerFn({ method: "POST" })
       values (${data.productId}, ${data.productName}, ${data.qty}, ${data.costoUnitario}, ${costoTotal}, ${data.proveedor ?? null}, ${data.nota ?? null}, ${context.adminEmail})
     `;
     await ensureStockRow(data.productId);
-    await sql`update stock set qty = qty + ${data.qty}, updated_at = now() where product_id = ${data.productId}`;
+    await sql`update stock set qty = qty + ${data.qty}, controlar = true, updated_at = now() where product_id = ${data.productId}`;
     return { ok: true };
   });

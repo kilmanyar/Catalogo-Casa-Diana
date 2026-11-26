@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { actualizarEstadoPedido, listEntregas } from "@/lib/admin/pedidos";
+import { actualizarEstadoPedido, actualizarEtapa, ETAPAS, listEntregas } from "@/lib/admin/pedidos";
+import { ETAPA_LABEL, mensajeEtapa, waLink } from "@/lib/etapas";
 import { money } from "@/lib/catalog";
 import { btnPrimary } from "@/components/store/ui";
 import { exportToExcel } from "@/lib/admin/xlsx-export";
@@ -15,6 +16,10 @@ function AdminEntregas() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin"] });
     },
+  });
+  const etapaM = useMutation({
+    mutationFn: (vars: { id: number; etapa: (typeof ETAPAS)[number] }) => actualizarEtapa({ data: vars }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin"] }),
   });
   const hoy = new Date().toISOString().slice(0, 10);
 
@@ -76,7 +81,21 @@ function AdminEntregas() {
                     <p className={"text-xs font-semibold " + (p.pagado ? "text-cash" : "text-coral")}>{p.pagado ? "Pagado" : "Sin pagar"}</p>
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <select
+                    aria-label="Etapa"
+                    className="h-9 rounded-md border border-line bg-paper px-2 text-sm text-navy"
+                    value={p.etapa}
+                    onChange={(e) => etapaM.mutate({ id: p.id, etapa: e.target.value as (typeof ETAPAS)[number] })}
+                  >
+                    {ETAPAS.map((e) => <option key={e} value={e}>{ETAPA_LABEL[e]}</option>)}
+                  </select>
+                  {p.cliente_telefono ? (
+                    <a className="rounded-md bg-[#25D366] px-3 py-1.5 text-sm font-semibold text-white" target="_blank" rel="noreferrer"
+                      href={waLink(p.cliente_telefono, mensajeEtapa(p.id, p.cliente_nombre, p.etapa, p.entrega_tipo))}>
+                      Avisar
+                    </a>
+                  ) : null}
                   {p.estado === "pendiente" ? (
                     <button type="button" className="rounded-md bg-navy/10 px-3 py-1.5 text-sm font-semibold text-navy" onClick={() => cambiar.mutate({ id: p.id, estado: "confirmado" })}>
                       Confirmar

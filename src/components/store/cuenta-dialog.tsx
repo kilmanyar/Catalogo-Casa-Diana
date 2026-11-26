@@ -5,6 +5,7 @@ import { authClient, signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { misPedidos, type MiPedido } from "@/lib/cuenta";
 import { money } from "@/lib/catalog";
+import { ETAPA_LABEL } from "@/lib/etapas";
 import { btnPrimary, fieldClass } from "@/components/store/ui";
 
 const ESTADO: Record<string, string> = { pendiente: "Pendiente", confirmado: "Confirmado", entregado: "Entregado", cancelado: "Cancelado" };
@@ -117,7 +118,7 @@ export function CuentaDialog({
                       <li key={p.id} className="rounded-lg bg-paper p-3 ring-1 ring-line">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="text-sm font-semibold text-navy">Pedido #{p.id}</p>
-                          <span className="text-xs font-semibold text-orange">{ESTADO[p.estado] ?? p.estado}</span>
+                          <span className="text-xs font-semibold text-orange">{p.estado === "entregado" || p.estado === "cancelado" ? ESTADO[p.estado] : ETAPA_LABEL[p.etapa] ?? ESTADO[p.estado]}</span>
                         </div>
                         <p className="text-xs text-muted">{new Date(p.fecha).toLocaleDateString("es-PY")}</p>
                         <ul className="mt-2 text-sm text-navy">

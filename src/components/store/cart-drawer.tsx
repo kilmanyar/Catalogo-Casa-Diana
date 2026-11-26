@@ -94,6 +94,7 @@ export function CartDrawer({
   const [tried, setTried] = useState(false);
   const [receipt, setReceipt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pedidoId, setPedidoId] = useState<number | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; amount: number } | null>(null);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
@@ -157,6 +158,7 @@ export function CartDrawer({
     const code = onTakeCode();
     const msg = buildOrderMessage({ code, items: lines, profile, gift, giftMessage, coupon });
     setReceipt(msg);
+    setPedidoId(null);
     setCopied(false);
     void navigator.clipboard.writeText(msg).then(() => setCopied(true)).catch(() => setCopied(false));
 
@@ -178,9 +180,11 @@ export function CartDrawer({
           precioUnitario: profile.payment === "cash" ? cashUnit(product) : product.price,
         })),
       },
-    }).catch(() => {
-      /* best-effort: el comprobante y el WhatsApp ya quedaron listos igual */
-    });
+    })
+      .then((r) => setPedidoId(r.id))
+      .catch(() => {
+        /* best-effort: el comprobante y el WhatsApp ya quedaron listos igual */
+      });
   };
 
   const savePdf = () => {
@@ -230,6 +234,11 @@ export function CartDrawer({
                 <Dialog.Description className="text-sm text-navy">
                   El comprobante ya está listo. Al abrir WhatsApp se envía con este texto, sin copiarlo. También podés guardarlo en PDF.
                 </Dialog.Description>
+                {pedidoId ? (
+                  <p className="rounded-md bg-paper px-3 py-2 text-sm text-navy ring-1 ring-line">
+                    Tu n.º de pedido es <strong>#{pedidoId}</strong>. Podés seguirlo en <a className="font-semibold underline" href="/seguimiento">Seguir mi pedido</a> con tu teléfono.
+                  </p>
+                ) : null}
                 {copied ? <p className="text-xs font-medium text-cash">También quedó copiado por si querés pegarlo en otro lado.</p> : null}
                 <article id="order-ticket" className="order-ticket rounded-lg bg-paper px-4 py-5 text-navy ring-1 ring-line">
                   <pre className="whitespace-pre-wrap font-mono text-[13px] leading-relaxed">{receipt}</pre>
@@ -361,6 +370,7 @@ export function CartDrawer({
                         <span className="mt-0.5 block text-xs font-medium">₲ {money(cash)}</span>
                       </button>
                     </div>
+                    <p className="text-xs text-muted">Al retirar podés abonar con tarjeta o QR (Tokefon) o en efectivo; el precio depende del medio que elijas.</p>
                     <h3 className="mt-2 font-display text-lg text-ink">¿Cómo lo recibís? *</h3>
                     <div id="checkout-delivery" className={"grid grid-cols-2 gap-2 rounded-lg p-0.5 " + (invalid.has("delivery") ? "ring-2 ring-coral" : "")}>
                       <button type="button" aria-pressed={profile.delivery === "pickup"} className={choiceClass(profile.delivery === "pickup")} onClick={() => onProfile({ delivery: "pickup" })}>

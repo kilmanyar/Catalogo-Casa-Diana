@@ -5,6 +5,7 @@ import { clienteMiddleware } from "./cuenta-middleware";
 export type MiPedido = {
   id: number;
   estado: string;
+  etapa: string;
   total: number;
   descuento: number;
   fecha: string;
@@ -16,8 +17,8 @@ export const misPedidos = createServerFn({ method: "GET" })
   .middleware([clienteMiddleware])
   .handler(async ({ context }): Promise<MiPedido[]> => {
     const sql = await getSql();
-    const pedidos = await sql<{ id: number; estado: string; total: string; descuento: string; created_at: string }>`
-      select id, estado, total, descuento, created_at from pedidos
+    const pedidos = await sql<{ id: number; estado: string; etapa: string; total: string; descuento: string; created_at: string }>`
+      select id, estado, etapa, total, descuento, created_at from pedidos
       where user_id = ${context.userId} order by created_at desc limit 50
     `;
     if (pedidos.length === 0) return [];
@@ -29,6 +30,7 @@ export const misPedidos = createServerFn({ method: "GET" })
     return pedidos.map((p) => ({
       id: p.id,
       estado: p.estado,
+      etapa: p.etapa,
       total: Number(p.total),
       descuento: Number(p.descuento),
       fecha: p.created_at,

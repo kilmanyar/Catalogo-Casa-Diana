@@ -22,7 +22,7 @@ const itemInput = z.object({
 const registrarPedidoInput = z.object({
   clienteNombre: z.string().trim().max(200).optional(),
   clienteTelefono: z.string().trim().max(50).optional(),
-  metodoPago: z.enum(["tarjeta", "efectivo", "transferencia"]).optional(),
+  metodoPago: z.enum(["tarjeta", "efectivo", "transferencia", "tokefon", "qr"]).optional(),
   total: z.number().nonnegative(),
   nota: z.string().trim().max(2000).optional(),
   cupon: z.string().trim().max(40).optional(),
@@ -111,6 +111,7 @@ export type PedidoRow = {
   factura_nro: string | null;
   cupon: string | null;
   descuento: string;
+  etapa: string;
   created_at: string;
   updated_at: string;
 };
@@ -152,7 +153,7 @@ export const getPedidoDetalle = createServerFn({ method: "GET" })
 const crearPedidoManualInput = z.object({
   clienteNombre: z.string().trim().max(200).optional(),
   clienteTelefono: z.string().trim().max(50).optional(),
-  metodoPago: z.enum(["tarjeta", "efectivo", "transferencia"]).optional(),
+  metodoPago: z.enum(["tarjeta", "efectivo", "transferencia", "tokefon", "qr"]).optional(),
   nota: z.string().trim().max(2000).optional(),
   entregaTipo: z.enum(["retiro", "delivery"]).optional(),
   direccion: z.string().trim().max(500).optional(),
@@ -197,7 +198,7 @@ export const actualizarEstadoPedido = createServerFn({ method: "POST" })
     if (current.length === 0) throw new Error("Pedido no encontrado");
     const pedido = current[0];
 
-    await sql`update pedidos set estado = ${data.estado}, updated_at = now() where id = ${data.id}`;
+    await sql`update pedidos set estado = ${data.estado}, etapa = ${data.estado === "entregado" ? "entregado" : pedido.etapa}, updated_at = now() where id = ${data.id}`;
 
     // Al pasar a "entregado" por primera vez, descuenta stock (idempotente vía
     // stock_descontado). Si se cancela un pedido ya entregado, repone stock.
@@ -244,7 +245,7 @@ const logisticaInput = z.object({
   costoEnvio: z.number().nonnegative(),
   fechaEntrega: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   pagado: z.boolean(),
-  metodoPago: z.enum(["tarjeta", "efectivo", "transferencia"]).nullable(),
+  metodoPago: z.enum(["tarjeta", "efectivo", "transferencia", "tokefon", "qr"]).nullable(),
   rucCi: z.string().trim().max(40).nullable(),
   facturaNro: z.string().trim().max(40).nullable(),
   nota: z.string().trim().max(2000).nullable(),
@@ -285,4 +286,15 @@ export const listEntregas = createServerFn({ method: "GET" })
       order by fecha_entrega asc nulls last, created_at asc
       limit 500
     `;
+  });
+
+export const ETAPAS = ["recibido", "preparando", "listo", "en_camino", "entregado"] as const;
+
+export const actualizarEtapa = createServerFn({ method: "POST" })
+  .middleware([requireAdminMiddleware])
+  .validator((input: unknown) => z.object({ id: z.number().int(), etapa: z.enum(ETAPAS) }).parse(input))
+  .handler(async ({ data }) => {
+    const sql = await getSql();
+    await sql`update pedidos set etapa = ${data.etapa}, updated_at = now() where id = ${data.id}`;
+    return { ok: true };
   });

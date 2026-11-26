@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   actualizarEstadoPedido,
+  actualizarEtapa,
+  ETAPAS,
   actualizarLogistica,
   crearPedidoManual,
   getPedidoDetalle,
@@ -10,6 +12,7 @@ import {
 } from "@/lib/admin/pedidos";
 import { BROWSE_PRODUCTS, money } from "@/lib/catalog";
 import { btnOrange, btnPrimary, fieldClass, selectClass } from "@/components/store/ui";
+import { ETAPA_LABEL, mensajeEtapa, waLink } from "@/lib/etapas";
 import { exportToExcel } from "@/lib/admin/xlsx-export";
 
 export const Route = createFileRoute("/admin/pedidos")({ component: AdminPedidos });
@@ -204,7 +207,7 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
     envio: number;
     fecha: string;
     pagado: boolean;
-    metodo: "" | "tarjeta" | "efectivo" | "transferencia";
+    metodo: "" | "tarjeta" | "efectivo" | "transferencia" | "tokefon" | "qr";
     ruc: string;
     factura: string;
     nota: string;
@@ -218,7 +221,7 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
       envio: Number(p.costo_envio),
       fecha: p.fecha_entrega ? p.fecha_entrega.slice(0, 10) : "",
       pagado: p.pagado,
-      metodo: (p.metodo_pago as "tarjeta" | "efectivo" | "transferencia" | null) ?? "",
+      metodo: (p.metodo_pago as "tarjeta" | "efectivo" | "transferencia" | "tokefon" | "qr" | null) ?? "",
       ruc: p.ruc_ci ?? "",
       factura: p.factura_nro ?? "",
       nota: p.nota ?? "",
@@ -247,6 +250,15 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
       qc.invalidateQueries({ queryKey: ["admin"] });
     },
   });
+
+  const etapaM = useMutation({
+    mutationFn: (etapa: (typeof ETAPAS)[number]) => actualizarEtapa({ data: { id, etapa } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin"] });
+    },
+  });
+  const [etapaSel, setEtapaSel] = useState<string | null>(null);
+  const etapa = etapaSel ?? p?.etapa ?? "recibido";
 
   const set = <K extends keyof NonNullable<typeof f>>(k: K, v: NonNullable<typeof f>[K]) => setF((prev) => (prev ? { ...prev, [k]: v } : prev));
   const label = "text-xs font-semibold uppercase text-muted";
@@ -312,6 +324,26 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
                 </label>
               </>
             ) : null}
+            <div className="flex flex-col gap-1">
+              <span className={label}>Seguimiento (lo ve el cliente)</span>
+              <div className="flex gap-2">
+                <select
+                  className={selectClass + " flex-1"}
+                  value={etapa}
+                  onChange={(e) => {
+                    setEtapaSel(e.target.value);
+                    etapaM.mutate(e.target.value as (typeof ETAPAS)[number]);
+                  }}
+                >
+                  {ETAPAS.map((e) => <option key={e} value={e}>{ETAPA_LABEL[e]}</option>)}
+                </select>
+                {f.telefono ? (
+                  <a className={btnPrimary} target="_blank" rel="noreferrer" href={waLink(f.telefono, mensajeEtapa(id, f.cliente || null, etapa, f.entrega))}>
+                    Avisar por WhatsApp
+                  </a>
+                ) : null}
+              </div>
+            </div>
             <label className="flex flex-col gap-1">
               <span className={label}>Fecha de entrega</span>
               <input className={fieldClass} type="date" value={f.fecha} onChange={(e) => set("fecha", e.target.value)} />
@@ -323,6 +355,8 @@ function DetallePedido({ id, onClose }: { id: number; onClose: () => void }) {
                 <option value="efectivo">Efectivo</option>
                 <option value="transferencia">Transferencia</option>
                 <option value="tarjeta">Tarjeta</option>
+                <option value="tokefon">Tokefon (tarjeta/QR en persona)</option>
+                <option value="qr">QR</option>
               </select>
             </label>
             <label className="flex items-center gap-2 text-navy">

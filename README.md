@@ -14,3 +14,11 @@ usuarios del panel, recibos imprimibles y respaldo completo a Excel.
 
 ## Primer uso
 Entrar a `/login`, "Primera vez — crear cuenta" con `kilmanyar@gmail.com` (dueño). Luego agregar personal en `/admin/usuarios`.
+
+## Funciones del panel y la tienda
+- Tienda: WhatsApp por producto, ofertas/etiquetas, filtros de precio, cupones, cuentas de clientes (historial y repetir pedido), seguimiento en `/seguimiento`.
+- Panel (`/admin`): pedidos, entregas con etapas y aviso por WhatsApp, clientes, stock (mínimos, mermas, código de barras, reservas por pedidos abiertos), ofertas, cupones, compras, gastos, reportes y usuarios.
+- Cobro en persona con Tokefon (tarjeta/QR) o efectivo: se registra en el pedido (método "Tokefon") y se marca como pagado.
+
+## Variables opcionales
+- `RESEND_API_KEY`, `NOTIFY_EMAIL` (y `NOTIFY_FROM`): aviso por correo de cada pedido nuevo.
