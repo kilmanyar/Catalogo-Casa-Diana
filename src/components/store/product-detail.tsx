@@ -2,8 +2,11 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Check, Heart, Minus, Plus, Share2, ShoppingBag, X } from "lucide-react";
 import {
+  ETIQUETA_TEXTO,
   brandOf,
   categoryLabel,
+  consultText,
+  whatsappHref,
   decantSibling,
   decantSizeMl,
   isDecant,
@@ -120,7 +123,7 @@ export function ProductDetail({
             ) : null}
           </div>
           <div className="flex flex-col items-start gap-3 px-4 py-4">
-            <span className="rounded bg-[#E23A4A] px-2 py-1 text-[11px] font-bold tracking-wide text-white uppercase">{categoryLabel(product.category)}</span>
+            <div className="flex gap-2"><span className="rounded bg-[#E23A4A] px-2 py-1 text-[11px] font-bold tracking-wide text-white uppercase">{categoryLabel(product.category)}</span>{product.etiqueta ? <span className="rounded bg-orange px-2 py-1 text-[11px] font-bold tracking-wide text-white uppercase">{ETIQUETA_TEXTO[product.etiqueta]}</span> : null}</div>
             <Dialog.Title className="font-display text-3xl leading-tight text-ink">{product.name}</Dialog.Title>
             {meta ? <p className="text-sm text-muted">{meta}</p> : null}
             <Dialog.Description className="sr-only">
@@ -192,9 +195,14 @@ export function ProductDetail({
                 </button>
               </div>
             )}
-            <button type="button" className="text-sm font-semibold text-navy underline" onClick={onContact}>
-              Preguntar por este producto
-            </button>
+            <a
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#25D366] px-4 text-sm font-semibold text-white"
+              href={whatsappHref(consultText(product))}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Consultar este producto por WhatsApp
+            </a>
           </div>
           {related.length > 0 ? (
             <div className="px-4 pb-10">

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { requireAdminMiddleware, ensureStockRow } from "./require-admin";
+import { calcularCupon } from "./cupones";
 
 // ── Público (sin auth): se llama desde el carrito al armar el comprobante ──
 // Ver src/components/store/cart-drawer.tsx. Registra el pedido como
@@ -23,6 +24,7 @@ const registrarPedidoInput = z.object({
   metodoPago: z.enum(["tarjeta", "efectivo", "transferencia"]).optional(),
   total: z.number().nonnegative(),
   nota: z.string().trim().max(2000).optional(),
+  cupon: z.string().trim().max(40).optional(),
   items: z.array(itemInput).min(1).max(100),
 });
 
@@ -30,9 +32,23 @@ export const registrarPedidoDesdeCarrito = createServerFn({ method: "POST" })
   .validator((input: unknown) => registrarPedidoInput.parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();
+    let descuento = 0;
+    let cupon: string | null = null;
+    if (data.cupon) {
+      try {
+        const r = await calcularCupon(data.cupon, data.total);
+        if (r.ok) {
+          descuento = r.descuento;
+          cupon = r.codigo;
+        }
+      } catch {
+        /* sin cupón */
+      }
+    }
+    const totalFinal = Math.max(0, data.total - descuento);
     const rows = await sql<{ id: number }>`
-      insert into pedidos (origen, cliente_nombre, cliente_telefono, estado, metodo_pago, total)
-      values ('whatsapp', ${data.clienteNombre ?? null}, ${data.clienteTelefono ?? null}, 'pendiente', ${data.metodoPago ?? null}, ${data.total})
+      insert into pedidos (origen, cliente_nombre, cliente_telefono, estado, metodo_pago, total, cupon, descuento)
+      values ('whatsapp', ${data.clienteNombre ?? null}, ${data.clienteTelefono ?? null}, 'pendiente', ${data.metodoPago ?? null}, ${totalFinal}, ${cupon}, ${descuento})
       returning id
     `;
     const pedidoId = rows[0].id;
@@ -42,8 +58,35 @@ export const registrarPedidoDesdeCarrito = createServerFn({ method: "POST" })
         values (${pedidoId}, ${item.productId}, ${item.productName}, ${item.qty}, ${item.precioUnitario}, ${item.precioUnitario * item.qty})
       `;
     }
+    if (cupon) await sql`update cupones set usos = usos + 1 where codigo = ${cupon}`;
+    await avisarPedidoNuevo(pedidoId, data.clienteNombre, data.clienteTelefono, totalFinal, data.items.length);
     return { id: pedidoId };
   });
+
+/**
+ * Aviso por correo de un pedido nuevo (opcional). Si no están configuradas
+ * RESEND_API_KEY y NOTIFY_EMAIL (variables de entorno en Vercel), no hace nada.
+ * Nunca rompe el pedido si falla.
+ */
+async function avisarPedidoNuevo(id: number, nombre: string | undefined, tel: string | undefined, total: number, lineas: number) {
+  const key = process.env.RESEND_API_KEY;
+  const to = process.env.NOTIFY_EMAIL;
+  if (!key || !to) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: process.env.NOTIFY_FROM || "Casa Diana <onboarding@resend.dev>",
+        to: to.split(",").map((e) => e.trim()),
+        subject: `Pedido nuevo #${id} — ₲ ${Math.round(total).toLocaleString("es-PY")}`,
+        text: `Pedido #${id}\nCliente: ${nombre || "sin nombre"} ${tel || ""}\nProductos: ${lineas}\nTotal: ₲ ${Math.round(total).toLocaleString("es-PY")}\n\nRevisalo en /admin/pedidos`,
+      }),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
 
 // ── Admin (requiere sign-in + allowlist) ──────────────────────────────────
 
@@ -64,6 +107,8 @@ export type PedidoRow = {
   pagado: boolean;
   ruc_ci: string | null;
   factura_nro: string | null;
+  cupon: string | null;
+  descuento: string;
   created_at: string;
   updated_at: string;
 };

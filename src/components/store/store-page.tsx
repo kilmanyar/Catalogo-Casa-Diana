@@ -12,6 +12,7 @@ import {
   brandsIn,
   cashUnit,
   categoryLabel,
+  conOferta,
   consultText,
   filterProducts,
   lastUnits,
@@ -20,8 +21,11 @@ import {
   productById,
   PICKUP,
   whatsappHref,
+  type OfertaPublica,
+  type Product,
   type SortKey,
 } from "@/lib/catalog";
+import { listOfertasPublicas } from "@/lib/admin/ofertas";
 import { useCart } from "@/lib/cart-store";
 import { ProductCard } from "@/components/store/product-card";
 import { ProductDetail } from "@/components/store/product-detail";
@@ -64,6 +68,10 @@ export function StorePage() {
   const [perfumeType, setPerfumeType] = useState("all");
   const [gender, setGender] = useState("all");
   const [sort, setSort] = useState<SortKey>("suggested");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [soloOfertas, setSoloOfertas] = useState(false);
+  const [ofertas, setOfertas] = useState<Record<string, OfertaPublica>>({});
   const [visible, setVisible] = useState(24);
   const [cartOpen, setCartOpen] = useState(false);
   const [favOpen, setFavOpen] = useState(false);
@@ -79,6 +87,14 @@ export function StorePage() {
   useEffect(() => {
     void useCart.persist.rehydrate();
   }, []);
+
+  useEffect(() => {
+    // Ofertas y etiquetas cargadas desde el panel. Si falla, la tienda sigue con los precios normales.
+    listOfertasPublicas()
+      .then((rows) => setOfertas(Object.fromEntries(rows.map((r) => [r.productId, r]))))
+      .catch(() => {});
+  }, []);
+  const adj = useMemo(() => (p: Product) => conOferta(p, ofertas), [ofertas]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -106,23 +122,29 @@ export function StorePage() {
   const brands = useMemo(() => brandsIn(brandPool), [brandPool]);
   const safeBrand = brands.includes(brand) ? brand : "all";
 
-  const filtered = useMemo(
-    () =>
-      filterProducts(BROWSE_PRODUCTS, {
-        category,
-        query,
-        brand: safeBrand,
-        perfumeType,
-        gender,
-        onlyIds: null,
-        sort,
-      }),
-    [category, query, safeBrand, perfumeType, gender, sort],
-  );
+  const filtered = useMemo(() => {
+    const min = Number(minPrice.replace(/\D/g, "")) || 0;
+    const max = Number(maxPrice.replace(/\D/g, "")) || 0;
+    const base = filterProducts(BROWSE_PRODUCTS, {
+      category,
+      query,
+      brand: safeBrand,
+      perfumeType,
+      gender,
+      onlyIds: null,
+      sort,
+    }).map(adj);
+    return base.filter((p) => {
+      if (soloOfertas && !p.etiqueta) return false;
+      if (min && cashUnit(p) < min) return false;
+      if (max && cashUnit(p) > max) return false;
+      return true;
+    });
+  }, [category, query, safeBrand, perfumeType, gender, sort, adj, minPrice, maxPrice, soloOfertas]);
 
   useEffect(() => {
     setVisible(24);
-  }, [category, query, safeBrand, perfumeType, gender, sort]);
+  }, [category, query, safeBrand, perfumeType, gender, sort, minPrice, maxPrice, soloOfertas]);
 
   const suggestions = useMemo(() => {
     const q = query.trim();
@@ -130,24 +152,25 @@ export function StorePage() {
     return BROWSE_PRODUCTS.filter((p) => matchesQuery(p, q)).slice(0, 6);
   }, [query]);
 
-  const detail = search.p ? productById(search.p) : undefined;
+  const detailBase = search.p ? productById(search.p) : undefined;
+  const detail = detailBase ? adj(detailBase) : undefined;
   const cartLines = useMemo(
     () =>
       Object.entries(linesMap).flatMap(([id, qty]) => {
-        const product = productById(id);
-        if (!product || qty <= 0) return [];
-        return [{ product, qty }];
+        const base = productById(id);
+        if (!base || qty <= 0) return [];
+        return [{ product: adj(base), qty }];
       }),
-    [linesMap],
+    [linesMap, adj],
   );
   const cartCount = cartLines.reduce((s, i) => s + i.qty, 0);
   const cartCash = cartLines.reduce((s, i) => s + cashUnit(i.product) * i.qty, 0);
   const favProducts = useMemo(
-    () => PRODUCTS.filter((p) => favorites[p.id]),
-    [favorites],
+    () => PRODUCTS.filter((p) => favorites[p.id]).map(adj),
+    [favorites, adj],
   );
   const showHome = category === "all" && !query.trim();
-  const spotlight = showHome ? lastUnits() : [];
+  const spotlight = showHome ? lastUnits().map(adj) : [];
   const shown = filtered.slice(0, visible);
 
   const openProduct = (id: string) => {
@@ -321,6 +344,11 @@ export function StorePage() {
             <option value="price_desc">Precio: mayor a menor</option>
             <option value="name">Nombre</option>
           </select>
+          <input className="filter-select" style={{ width: 120 }} inputMode="numeric" aria-label="Precio mínimo" placeholder="Desde ₲" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
+          <input className="filter-select" style={{ width: 120 }} inputMode="numeric" aria-label="Precio máximo" placeholder="Hasta ₲" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+          {Object.keys(ofertas).length > 0 ? (
+            <button type="button" className={"chip" + (soloOfertas ? " active" : "")} aria-pressed={soloOfertas} onClick={() => setSoloOfertas((v) => !v)}>Ofertas y novedades</button>
+          ) : null}
         </div>
       </section>
 

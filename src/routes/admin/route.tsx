@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { RedirectToSignIn, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getAccess } from "@/lib/admin/usuarios";
+import { getDashboardStats } from "@/lib/admin/stats";
 
 export const Route = createFileRoute("/admin")({ component: AdminLayout });
 
@@ -13,6 +14,9 @@ const NAV = [
   { to: "/admin/entregas", label: "Entregas" },
   { to: "/admin/clientes", label: "Clientes" },
   { to: "/admin/stock", label: "Stock" },
+  { to: "/admin/ofertas", label: "Ofertas" },
+  { to: "/admin/cupones", label: "Cupones" },
+  { to: "/admin/reportes", label: "Reportes" },
   { to: "/admin/compras", label: "Compras" },
   { to: "/admin/gastos", label: "Gastos" },
   { to: "/admin/usuarios", label: "Usuarios" },
@@ -36,6 +40,18 @@ function AdminLayout() {
 function AdminShell({ email }: { email: string | null | undefined }) {
   const location = useLocation();
   const access = useQuery({ queryKey: ["admin", "access"], queryFn: () => getAccess(), retry: false });
+
+  // Aviso de pedidos nuevos: revisa cada 30 s y lo muestra en la pestaña y en el menú.
+  const pend = useQuery({
+    queryKey: ["admin", "pendientes"],
+    queryFn: async () => (await getDashboardStats()).pedidosPendientes,
+    enabled: Boolean(access.data),
+    refetchInterval: 30000,
+  });
+  const pendientes = pend.data ?? 0;
+  useEffect(() => {
+    document.title = pendientes > 0 ? `(${pendientes}) Pedidos nuevos · Casa Diana Admin` : "Casa Diana Admin";
+  }, [pendientes]);
 
   if (access.isPending) return null;
   if (access.isError || !access.data) {
@@ -73,6 +89,9 @@ function AdminShell({ email }: { email: string | null | undefined }) {
                 }
               >
                 {item.label}
+                {item.to === "/admin/pedidos" && pendientes > 0 ? (
+                  <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[11px] text-paper">{pendientes}</span>
+                ) : null}
               </Link>
             );
           })}

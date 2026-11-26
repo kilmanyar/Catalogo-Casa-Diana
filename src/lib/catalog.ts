@@ -23,6 +23,8 @@ export type Product = {
   tipoPiel: string | null;
   englishName: string | null;
   inspirado?: string | null;
+  etiqueta?: "oferta" | "nuevo" | "mas_vendido" | null;
+  precioAntes?: number | null;
 };
 
 export type FaqItem = { q: string; a: string };
@@ -364,6 +366,21 @@ export function isLocalOpen(now = new Date()) {
   return (day === 0 || day === 6) && hour >= 9 && hour < 17;
 }
 
+export type OfertaPublica = { productId: string; etiqueta: string; precioOferta: number | null };
+
+/** Aplica una oferta/etiqueta al producto: baja el precio (efectivo = tarjeta / 1,05) y guarda el precio anterior. */
+export function conOferta(p: Product, map: Record<string, OfertaPublica>): Product {
+  const o = map[p.id];
+  if (!o) return p;
+  const etiqueta = (["oferta", "nuevo", "mas_vendido"].includes(o.etiqueta) ? o.etiqueta : null) as Product["etiqueta"];
+  if (etiqueta === "oferta" && o.precioOferta && p.price > 0 && o.precioOferta < p.price) {
+    return { ...p, etiqueta, precioAntes: p.price, price: o.precioOferta, priceCash: Math.round(o.precioOferta / 1.05) };
+  }
+  return { ...p, etiqueta: etiqueta === "oferta" ? null : etiqueta };
+}
+
+export const ETIQUETA_TEXTO: Record<string, string> = { oferta: "Oferta", nuevo: "Nuevo", mas_vendido: "Más vendido" };
+
 export function whatsappHref(text: string) {
   return `https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent(text)}`;
 }
@@ -382,11 +399,13 @@ export function buildOrderMessage(opts: {
   profile: Profile;
   gift: boolean;
   giftMessage: string;
+  coupon?: { code: string; amount: number } | null;
 }) {
-  const { code, items, profile, gift, giftMessage } = opts;
+  const { code, items, profile, gift, giftMessage, coupon } = opts;
   const payCash = profile.payment === "cash";
   const unit = (product: Product) => (payCash ? cashUnit(product) : product.price);
-  const total = items.reduce((sum, item) => sum + unit(item.product) * item.qty, 0);
+  const subtotal = items.reduce((sum, item) => sum + unit(item.product) * item.qty, 0);
+  const total = Math.max(0, subtotal - (coupon?.amount ?? 0));
   const when = new Intl.DateTimeFormat("es-PY", {
     timeZone: "America/Asuncion",
     day: "2-digit",
@@ -418,6 +437,7 @@ export function buildOrderMessage(opts: {
     "",
     "MEDIO DE PAGO",
     payCash ? "Efectivo y transferencia" : "Tarjeta",
+    ...(coupon && coupon.amount > 0 ? [`Cupón ${coupon.code}: -₲ ${money(coupon.amount)}`] : []),
     `TOTAL A ABONAR: ₲ ${money(total)}`,
     "",
     "ENTREGA",

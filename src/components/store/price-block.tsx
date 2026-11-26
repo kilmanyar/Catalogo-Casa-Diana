@@ -7,7 +7,7 @@ export function PriceBlock({ product, large, fromLabel }: { product: Product; la
   }
   return (
     <div className={"price-block" + (large ? " price-block-lg" : "")}>
-      <p className="price">{fromLabel ? "Desde " : ""}₲ {money(product.price)}</p>
+      <p className="price">{fromLabel ? "Desde " : ""}₲ {money(product.price)}{product.precioAntes ? <s className="ml-2 text-sm font-normal text-muted">₲ {money(product.precioAntes)}</s> : null}</p>
       {off > 0 ? (
         <>
           <p className="price-discount-row">

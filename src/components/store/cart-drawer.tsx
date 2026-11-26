@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Gift, MapPin, Minus, Plus, Trash2, X } from "lucide-react";
 import {
@@ -18,6 +18,7 @@ import {
 import { btnOrange, btnPrimary, fieldClass, selectClass } from "@/components/store/ui";
 import { ticketFileName, ticketPdf } from "@/lib/ticket-pdf";
 import { registrarPedidoDesdeCarrito } from "@/lib/admin/pedidos";
+import { validarCupon } from "@/lib/admin/cupones";
 
 type Line = { product: Product; qty: number };
 
@@ -93,11 +94,53 @@ export function CartDrawer({
   const [tried, setTried] = useState(false);
   const [receipt, setReceipt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; amount: number } | null>(null);
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
 
   const card = lines.reduce((s, i) => s + i.product.price * i.qty, 0);
   const cash = lines.reduce((s, i) => s + cashUnit(i.product) * i.qty, 0);
+  const payBase = profile.payment === "cash" ? cash : card;
   const hasWatch = lines.some((i) => i.product.category.startsWith("relojes"));
   const count = lines.reduce((s, i) => s + i.qty, 0);
+
+  // Revalida el cupón cuando cambia el total (cantidades o medio de pago).
+  const couponCode = coupon?.code;
+  useEffect(() => {
+    if (!couponCode) return;
+    let alive = true;
+    validarCupon({ data: { codigo: couponCode, subtotal: payBase } })
+      .then((r) => {
+        if (!alive) return;
+        if (r.ok) setCoupon({ code: r.codigo, amount: r.descuento });
+        else {
+          setCoupon(null);
+          setCouponMsg(r.mensaje);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [couponCode, payBase]);
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponMsg(null);
+    try {
+      const r = await validarCupon({ data: { codigo: code, subtotal: payBase } });
+      if (r.ok) {
+        setCoupon({ code: r.codigo, amount: r.descuento });
+        setCouponInput("");
+        setCouponMsg(r.mensaje);
+      } else {
+        setCouponMsg(r.mensaje);
+      }
+    } catch {
+      setCouponMsg("No se pudo validar el cupón.");
+    }
+  };
 
   const issues = checkoutIssues(profile, hasWatch);
   const invalid = new Set(tried ? issues.map((issue) => issue.field) : []);
@@ -112,7 +155,7 @@ export function CartDrawer({
     }
     setTried(false);
     const code = onTakeCode();
-    const msg = buildOrderMessage({ code, items: lines, profile, gift, giftMessage });
+    const msg = buildOrderMessage({ code, items: lines, profile, gift, giftMessage, coupon });
     setReceipt(msg);
     setCopied(false);
     void navigator.clipboard.writeText(msg).then(() => setCopied(true)).catch(() => setCopied(false));
@@ -127,6 +170,7 @@ export function CartDrawer({
         clienteTelefono: profile.phone || undefined,
         metodoPago: profile.payment === "cash" ? "efectivo" : profile.payment === "card" ? "tarjeta" : undefined,
         total,
+        cupon: coupon?.code,
         items: lines.map(({ product, qty }) => ({
           productId: product.id,
           productName: product.name,
@@ -261,6 +305,27 @@ export function CartDrawer({
                       <span className="text-sm font-semibold text-cash">Total efectivo/transferencia</span>
                       <span className="font-display text-lg font-semibold text-cash">₲ {money(cash)}</span>
                     </div>
+                    {coupon && coupon.amount > 0 ? (
+                      <div className="mt-1 flex items-baseline justify-between gap-3">
+                        <span className="text-sm font-semibold text-orange">Cupón {coupon.code}</span>
+                        <span className="font-semibold text-orange">-₲ {money(coupon.amount)}</span>
+                      </div>
+                    ) : null}
+                    <div className="mt-3 flex gap-2">
+                      <input
+                        className={fieldClass}
+                        placeholder="¿Tenés un cupón?"
+                        aria-label="Código de cupón"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => { if (e.key === "Enter") void applyCoupon(); }}
+                      />
+                      <button type="button" className={btnPrimary} onClick={() => void applyCoupon()}>Aplicar</button>
+                    </div>
+                    {couponMsg ? <p className="mt-1 text-xs font-medium text-navy">{couponMsg}</p> : null}
+                    {coupon ? (
+                      <button type="button" className="mt-1 text-xs text-muted underline" onClick={() => { setCoupon(null); setCouponMsg(null); }}>Quitar cupón</button>
+                    ) : null}
                   </div>
                   <label className="flex items-center gap-2 text-sm font-medium text-navy">
                     <input type="checkbox" checked={gift} onChange={(e) => setGift(e.target.checked)} className="size-4 accent-orange" />

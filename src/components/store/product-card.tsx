@@ -1,5 +1,5 @@
 import { Check, Heart, Ruler, ShoppingBag } from "lucide-react";
-import { brandOf, isDecant, isSoldOut, maxQty, type Product } from "@/lib/catalog";
+import { ETIQUETA_TEXTO, brandOf, isDecant, isSoldOut, maxQty, type Product } from "@/lib/catalog";
 import { PriceBlock } from "@/components/store/price-block";
 
 export function ProductCard({
@@ -37,7 +37,9 @@ export function ProductCard({
         ) : (
           <span className="img-fallback">{product.name.slice(0, 1)}</span>
         )}
-        {sold ? <span className="badge-sold">Agotado</span> : null}
+        {sold ? <span className="badge-sold">Agotado</span> : product.etiqueta ? (
+          <span className="absolute top-2 left-2 rounded bg-[#E23A4A] px-2 py-0.5 text-[11px] font-bold tracking-wide text-white uppercase">{ETIQUETA_TEXTO[product.etiqueta]}</span>
+        ) : null}
         <div className="card-quick-actions">
           <button
             type="button"
