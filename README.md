@@ -22,3 +22,4 @@ Entrar a `/login`, "Primera vez — crear cuenta" con `kilmanyar@gmail.com` (due
 
 ## Variables opcionales
 - `RESEND_API_KEY`, `NOTIFY_EMAIL` (y `NOTIFY_FROM`): aviso por correo de cada pedido nuevo.
+- Recuperar contraseña: `/recuperar` (por correo si hay `RESEND_API_KEY`; si no, el dueño genera un enlace en Admin → Usuarios y lo manda por WhatsApp).

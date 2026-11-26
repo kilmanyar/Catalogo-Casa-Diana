@@ -93,6 +93,7 @@ export function CuentaDialog({
                 <button type="submit" disabled={busy} className={btnPrimary}>
                   {busy ? "Un momento…" : mode === "in" ? "Ingresar" : "Crear cuenta"}
                 </button>
+                {mode === "in" ? <a href="/recuperar" className="text-center text-sm text-muted underline">¿Olvidaste tu contraseña?</a> : null}
                 <button type="button" className="text-center text-sm text-muted underline" onClick={() => { setMode(mode === "in" ? "up" : "in"); setError(null); }}>
                   {mode === "in" ? "No tengo cuenta — crear una" : "Ya tengo cuenta — ingresar"}
                 </button>

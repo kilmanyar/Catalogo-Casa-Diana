@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as RecuperarRouteImport } from './routes/recuperar'
 import { Route as SeguimientoRouteImport } from './routes/seguimiento'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminClientesRouteImport } from './routes/admin/clientes'
@@ -39,6 +40,11 @@ const AdminRouteRoute = AdminRouteRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarRoute = RecuperarRouteImport.update({
+  id: '/recuperar',
+  path: '/recuperar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SeguimientoRoute = SeguimientoRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/recuperar': typeof RecuperarRoute
   '/seguimiento': typeof SeguimientoRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/compras': typeof AdminComprasRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/recuperar': typeof RecuperarRoute
   '/seguimiento': typeof SeguimientoRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/compras': typeof AdminComprasRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/recuperar': typeof RecuperarRoute
   '/seguimiento': typeof SeguimientoRoute
   '/admin/clientes': typeof AdminClientesRoute
   '/admin/compras': typeof AdminComprasRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/recuperar'
     | '/seguimiento'
     | '/admin/clientes'
     | '/admin/compras'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/recuperar'
     | '/seguimiento'
     | '/admin/clientes'
     | '/admin/compras'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/recuperar'
     | '/seguimiento'
     | '/admin/clientes'
     | '/admin/compras'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RecuperarRoute: typeof RecuperarRoute
   SeguimientoRoute: typeof SeguimientoRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar': {
+      id: '/recuperar'
+      path: '/recuperar'
+      fullPath: '/recuperar'
+      preLoaderRoute: typeof RecuperarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/seguimiento': {
@@ -378,6 +398,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  RecuperarRoute: RecuperarRoute,
   SeguimientoRoute: SeguimientoRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

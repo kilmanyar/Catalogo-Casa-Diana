@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { generarEnlaceRecuperacion } from "@/lib/recuperar";
 import { addAdminUser, getAccess, listAdminUsers, removeAdminUser } from "@/lib/admin/usuarios";
 import { btnOrange, fieldClass } from "@/components/store/ui";
 
@@ -10,6 +11,17 @@ function AdminUsuarios() {
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const { data: access } = useQuery({ queryKey: ["admin", "access"], queryFn: () => getAccess() });
+  const [recEmail, setRecEmail] = useState("");
+  const [recLink, setRecLink] = useState<string | null>(null);
+  const [recErr, setRecErr] = useState<string | null>(null);
+  const generar = async () => {
+    setRecErr(null); setRecLink(null);
+    try {
+      setRecLink((await generarEnlaceRecuperacion({ data: { email: recEmail } })).link);
+    } catch (e) {
+      setRecErr(e instanceof Error ? e.message : "No se pudo generar el enlace.");
+    }
+  };
   const { data: users, isLoading } = useQuery({ queryKey: ["admin", "usuarios"], queryFn: () => listAdminUsers() });
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin", "usuarios"] });
   const add = useMutation({
@@ -45,6 +57,19 @@ function AdminUsuarios() {
       ) : (
         <p className="rounded-lg bg-paper p-3 text-sm text-muted ring-1 ring-line">Solo el dueño puede agregar o quitar usuarios.</p>
       )}
+
+      {isOwner ? (
+        <div className="rounded-lg bg-paper p-4 ring-1 ring-line">
+          <p className="text-sm font-semibold text-navy">Enlace para recuperar una contraseña</p>
+          <p className="text-xs text-muted">Para un cliente o staff que olvidó su clave. Vale 60 minutos; mandáselo por WhatsApp.</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input className={fieldClass} type="email" placeholder="email de la cuenta" value={recEmail} onChange={(e) => setRecEmail(e.target.value)} />
+            <button type="button" className={btnOrange} disabled={!recEmail.includes("@")} onClick={() => void generar()}>Generar enlace</button>
+          </div>
+          {recErr ? <p className="mt-2 text-sm text-coral">{recErr}</p> : null}
+          {recLink ? <input readOnly className={fieldClass + " mt-2 text-xs"} value={recLink} onFocus={(e) => e.currentTarget.select()} aria-label="Enlace de recuperación" /> : null}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <p className="text-sm text-muted">Cargando…</p>

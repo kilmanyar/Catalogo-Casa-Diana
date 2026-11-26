@@ -87,6 +87,9 @@ function Login() {
           {busy ? "Un momento…" : mode === "in" ? "Ingresar" : "Crear cuenta"}
         </button>
 
+        {mode === "in" ? (
+          <a href="/recuperar" className="mt-3 block w-full text-center text-xs text-muted underline-offset-4 hover:underline">¿Olvidaste tu contraseña?</a>
+        ) : null}
         <button
           type="button"
           onClick={() => setMode(mode === "in" ? "up" : "in")}
