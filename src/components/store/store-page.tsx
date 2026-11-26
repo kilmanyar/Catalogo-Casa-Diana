@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getRouteApi } from "@tanstack/react-router";
-import { BadgeCheck, ChevronDown, Heart, MapPin, MessageCircle, Search, ShieldCheck, ShoppingBag } from "lucide-react";
+import { BadgeCheck, ChevronDown, Heart, User, MapPin, MessageCircle, Search, ShieldCheck, ShoppingBag } from "lucide-react";
 import {
   BROWSE_PRODUCTS,
   CATEGORIES,
@@ -17,6 +17,7 @@ import {
   filterProducts,
   lastUnits,
   matchesQuery,
+  maxQty,
   money,
   productById,
   PICKUP,
@@ -31,6 +32,7 @@ import { ProductCard } from "@/components/store/product-card";
 import { ProductDetail } from "@/components/store/product-detail";
 import { CartDrawer } from "@/components/store/cart-drawer";
 import { FavoritesDrawer } from "@/components/store/favorites-drawer";
+import { CuentaDialog } from "@/components/store/cuenta-dialog";
 import { ContactDialog } from "@/components/store/contact-dialog";
 import { SocialLinks } from "@/components/store/social-links";
 import classicCss from "@/components/store/classic.css?inline";
@@ -75,6 +77,7 @@ export function StorePage() {
   const [visible, setVisible] = useState(24);
   const [cartOpen, setCartOpen] = useState(false);
   const [favOpen, setFavOpen] = useState(false);
+  const [cuentaOpen, setCuentaOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [contactText, setContactText] = useState<string | undefined>();
   const [faqPanel, setFaqPanel] = useState(false);
@@ -224,6 +227,9 @@ export function StorePage() {
           </div>
           <div className="header-actions">
             <SocialLinks compact />
+            <button type="button" aria-label="Mi cuenta" className="cart-toggle" onClick={() => setCuentaOpen(true)}>
+              <User size={18} />
+            </button>
             <button type="button" aria-label="Favoritos" className={"cart-toggle" + (favProducts.length > 0 ? " fav-active" : "")} onClick={() => setFavOpen(true)}>
               <Heart size={18} fill={favProducts.length > 0 ? "currentColor" : "none"} />
               {favProducts.length > 0 ? <span className="cart-badge">{favProducts.length}</span> : null}
@@ -479,6 +485,29 @@ export function StorePage() {
         onOpenProduct={openProduct}
         onAdd={(id) => handleAdd(id, 1)}
         onRemove={toggleFavorite}
+      />
+      <CuentaDialog
+        open={cuentaOpen}
+        onClose={() => setCuentaOpen(false)}
+        onRepeat={(items) => {
+          let n = 0;
+          for (const it of items) {
+            const base = productById(it.productId);
+            if (!base) continue;
+            const cap = maxQty(base);
+            const have = linesMap[it.productId] ?? 0;
+            const qty = Math.min(it.qty, cap - have);
+            if (qty > 0) {
+              add(it.productId, qty);
+              n += 1;
+            }
+          }
+          if (n > 0) {
+            setCuentaOpen(false);
+            setCartOpen(true);
+          }
+          return n;
+        }}
       />
       <ContactDialog open={contactOpen} text={contactText} onClose={() => setContactOpen(false)} />
     </div>

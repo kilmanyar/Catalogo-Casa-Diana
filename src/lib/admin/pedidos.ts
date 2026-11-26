@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { requireAdminMiddleware, ensureStockRow } from "./require-admin";
 import { calcularCupon } from "./cupones";
+import { optionalUserMiddleware } from "../cuenta-middleware";
 
 // ── Público (sin auth): se llama desde el carrito al armar el comprobante ──
 // Ver src/components/store/cart-drawer.tsx. Registra el pedido como
@@ -29,8 +30,9 @@ const registrarPedidoInput = z.object({
 });
 
 export const registrarPedidoDesdeCarrito = createServerFn({ method: "POST" })
+  .middleware([optionalUserMiddleware])
   .validator((input: unknown) => registrarPedidoInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const sql = await getSql();
     let descuento = 0;
     let cupon: string | null = null;
@@ -47,8 +49,8 @@ export const registrarPedidoDesdeCarrito = createServerFn({ method: "POST" })
     }
     const totalFinal = Math.max(0, data.total - descuento);
     const rows = await sql<{ id: number }>`
-      insert into pedidos (origen, cliente_nombre, cliente_telefono, estado, metodo_pago, total, cupon, descuento)
-      values ('whatsapp', ${data.clienteNombre ?? null}, ${data.clienteTelefono ?? null}, 'pendiente', ${data.metodoPago ?? null}, ${totalFinal}, ${cupon}, ${descuento})
+      insert into pedidos (origen, cliente_nombre, cliente_telefono, estado, metodo_pago, total, cupon, descuento, user_id)
+      values ('whatsapp', ${data.clienteNombre ?? null}, ${data.clienteTelefono ?? null}, 'pendiente', ${data.metodoPago ?? null}, ${totalFinal}, ${cupon}, ${descuento}, ${context.clienteId})
       returning id
     `;
     const pedidoId = rows[0].id;
