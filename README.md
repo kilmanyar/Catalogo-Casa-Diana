@@ -23,3 +23,6 @@ Entrar a `/login`, "Primera vez — crear cuenta" con `kilmanyar@gmail.com` (due
 ## Variables opcionales
 - `RESEND_API_KEY`, `NOTIFY_EMAIL` (y `NOTIFY_FROM`): aviso por correo de cada pedido nuevo.
 - Recuperar contraseña: `/recuperar` (por correo si hay `RESEND_API_KEY`; si no, el dueño genera un enlace en Admin → Usuarios y lo manda por WhatsApp).
+
+## Estado del despliegue
+Esta rama (`app-completa`) tiene el despliegue automático desactivado en `vercel.json`. Para publicarla: configurar Vercel (base de datos y variables), traer estos cambios a `main` y quitar el bloque `git` de `vercel.json`.
